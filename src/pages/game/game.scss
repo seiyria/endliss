@@ -1,0 +1,65 @@
+page-game {
+
+  .scroll-content {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  $tile-height: 42px;
+  $num-horiz-tiles: 6;
+  $num-vert-tiles: 12;
+
+  .container-grid {
+    max-width: ($tile-height * $num-horiz-tiles) + ($num-horiz-tiles * 4);
+    max-height: ($tile-height * $num-vert-tiles) + ($num-vert-tiles * 4);
+  }
+
+  ion-grid {
+    height: 100%;
+    padding: 0 !important;
+
+    justify-content: flex-end;
+
+    ion-row {
+      margin: 0 !important;
+      padding: 0 !important;
+
+      justify-content: center;
+
+      min-height: $tile-height + 2px !important;
+      max-height: $tile-height + 2px !important;
+
+      ion-col {
+        margin: 0 !important;
+        padding: 0 !important;
+
+        min-width: $tile-height + 2px !important;
+        max-width: $tile-height + 2px !important;
+        min-height: $tile-height + 2px !important;
+        max-height: $tile-height + 2px !important;
+
+        .tile:not(:first-child) {
+          margin: 1px !important;
+        }
+      }
+    }
+  }
+
+  ion-grid {
+    border: 1px solid #000;
+  }
+
+  .tile {
+    object-fit: contain;
+    min-width: $tile-height !important;
+    max-width: $tile-height !important;
+    min-height: $tile-height !important;
+    max-height: $tile-height !important;
+
+    img {
+      display: block;
+      width: auto;
+      height: auto;
+    }
+  }
+}

@@ -1,0 +1,20 @@
+
+<ion-content>
+
+  <ion-grid class="container-grid">
+
+    <ion-row *ngFor="let row of game.grid">
+
+      <ion-col *ngFor="let tile of row">
+
+        <div class="tile">
+          <img [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
+        </div>
+
+      </ion-col>
+
+    </ion-row>
+
+  </ion-grid>
+
+</ion-content>
