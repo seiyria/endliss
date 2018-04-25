@@ -9,7 +9,7 @@
                (swipeLeft)="swipeTile(x, y, -1)"
                (swipeRight)="swipeTile(x, y, 1)">
 
-        <div class="tile">
+        <div class="tile" [attr.x]="x" [attr.y]="y">
           <img *ngIf="tile" [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
         </div>
 

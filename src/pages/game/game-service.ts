@@ -45,7 +45,7 @@ export class GameService {
 
   public swap(x: number, y: number, dir: -1|1) {
 
-    if(x + dir <= 0) return;
+    if(x + dir < 0) return;
     if(x + dir >= this.settings.width) return;
 
     this.swapPositions(x, y, x + dir, y);
@@ -116,7 +116,7 @@ export class GameService {
     if(!tile) return;
 
     const isOnTile = this.getTile(x, y + 1);
-    if(!isOnTile) return;
+    if(!isOnTile && y !== this.settings.height - 1) return;
 
     const verticalContinuity = [{ x, y, tile }];
     const horizontalContinuity = [{ x, y, tile }];
