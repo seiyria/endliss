@@ -20,4 +20,8 @@ export class GamePage {
     this.game.init();
   }
 
+  swipeTile(x: number, y: number, dir: -1|1) {
+    this.game.swap(x, y, dir);
+  }
+
 }

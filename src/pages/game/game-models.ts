@@ -1,4 +1,12 @@
 
+export enum GameSpeed {
+  Slowest = 100,
+  Slow = 80,
+  Normal = 60,
+  Fast = 40,
+  Fastest = 20
+}
+
 export enum GameStartingDifficulty {
   Beginner = 1,
   Easy = 3,
@@ -17,4 +25,6 @@ export enum TileColor {
 
 export class Tile {
   color: TileColor;
+
+  transparent: boolean;
 }

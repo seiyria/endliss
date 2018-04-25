@@ -3,12 +3,14 @@
 
   <ion-grid class="container-grid">
 
-    <ion-row *ngFor="let row of game.grid">
+    <ion-row *ngFor="let row of game.grid; let y = index">
 
-      <ion-col *ngFor="let tile of row">
+      <ion-col *ngFor="let tile of row; let x = index"
+               (swipeLeft)="swipeTile(x, y, -1)"
+               (swipeRight)="swipeTile(x, y, 1)">
 
         <div class="tile">
-          <img [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
+          <img *ngIf="tile" [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
         </div>
 
       </ion-col>
