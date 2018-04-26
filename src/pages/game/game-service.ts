@@ -52,11 +52,9 @@ export class GameService {
     this.settleGameAfterGravity();
 
     this.hasInit = true;
-    console.log('init')
   }
 
   private delayExecutionUnlessInitialized(func: Function) {
-    console.log(func, this.hasInit);
     if(!this.hasInit) {
       func();
       return;
