@@ -23,8 +23,13 @@ export enum TileColor {
   Yellow = 'yellow'
 }
 
+export class Vec2 {
+  x: number;
+  y: number;
+}
+
 export class Tile {
   color: TileColor;
 
-  transparent: boolean;
+  isFalling: boolean;
 }

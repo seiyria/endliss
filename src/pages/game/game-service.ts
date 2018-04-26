@@ -1,6 +1,7 @@
 
-import { GameSpeed, GameStartingDifficulty, Tile, TileColor } from './game-models';
+import { GameSpeed, GameStartingDifficulty, Tile, TileColor, Vec2 } from './game-models';
 import * as _ from 'lodash';
+import { Subject } from 'rxjs/Subject';
 
 class GameSettings {
   width: number;
@@ -11,10 +12,18 @@ class GameSettings {
 
 export class GameService {
 
+  // events
+  private hasInit: boolean;
+
+  public $swap = new Subject<{ callback: Function, leftTile: Vec2, rightTile: Vec2 }>();
+  public $break = new Subject<{ callback: Function, tiles: Vec2[] }>();
+  public $fall = new Subject<{ callback: Function, tile: Vec2 }>();
+
+  // settings
   private settings: GameSettings = {
     width: 6,
     height: 12,
-    difficulty: GameStartingDifficulty.Normal,
+    difficulty: 10,
     speed: GameSpeed.Normal
   };
 
@@ -41,6 +50,21 @@ export class GameService {
     }
 
     this.settleGameAfterGravity();
+
+    this.hasInit = true;
+    console.log('init')
+  }
+
+  private delayExecutionUnlessInitialized(func: Function) {
+    console.log(func, this.hasInit);
+    if(!this.hasInit) {
+      func();
+      return;
+    }
+
+    setTimeout(() => {
+      func();
+    });
   }
 
   public swap(x: number, y: number, dir: -1|1) {
@@ -48,10 +72,22 @@ export class GameService {
     if(x + dir < 0) return;
     if(x + dir >= this.settings.width) return;
 
-    this.swapPositions(x, y, x + dir, y);
-    this.checkForMatchesAround(x, y);
-    this.checkForMatchesAround(x + dir, y);
-    this.doGravity();
+    const leftTile = dir === -1 ? { x: x + dir, y } : { x, y };
+    const rightTile = dir === -1 ? { x, y } : { x: x + dir, y };
+
+    const callback = () => {
+      this.swapPositions(x, y, x + dir, y);
+      this.checkForMatchesAround(x, y);
+      this.checkForMatchesAround(x + dir, y);
+
+      this.delayExecutionUnlessInitialized(() => this.doGravity());
+    };
+
+    this.$swap.next({
+      callback,
+      leftTile,
+      rightTile
+    });
   }
 
   private loseGame(): void {
@@ -95,9 +131,12 @@ export class GameService {
     delete this._grid[y][x];
   }
 
-  private swapPositions(oldX: number, oldY: number, newX: number, newY: number): void {
+  private swapPositions(oldX: number, oldY: number, newX: number, newY: number, force = false): void {
     const oldTile = this.getTile(oldX, oldY);
     const newTile = this.getTile(newX, newY);
+
+    if(!force && oldTile && oldTile.isFalling) return;
+    if(!force && newTile && newTile.isFalling) return;
 
     this.setTile(oldX, oldY, newTile);
     this.setTile(newX, newY, oldTile);
@@ -118,8 +157,8 @@ export class GameService {
     const isOnTile = this.getTile(x, y + 1);
     if(!isOnTile && y !== this.settings.height - 1) return;
 
-    const verticalContinuity = [{ x, y, tile }];
-    const horizontalContinuity = [{ x, y, tile }];
+    const verticalContinuity = [{ x, y }];
+    const horizontalContinuity = [{ x, y }];
 
     // get horizontal continuity, ie, how many tiles are in a row horizontally
     for(let checkX = x - 1; checkX >= 0; checkX--) {
@@ -127,7 +166,7 @@ export class GameService {
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
 
-      horizontalContinuity.unshift({ tile: checkTile, x: checkX, y });
+      horizontalContinuity.unshift({ x: checkX, y });
     }
 
     for(let checkX = x + 1; checkX < this.settings.width; checkX++) {
@@ -135,7 +174,7 @@ export class GameService {
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
 
-      horizontalContinuity.push({ tile: checkTile, x: checkX, y });
+      horizontalContinuity.push({ x: checkX, y });
     }
 
     // get vertical continuity, ie, how many tiles are in a row vertically
@@ -144,7 +183,7 @@ export class GameService {
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
 
-      verticalContinuity.unshift({ tile: checkTile, x, y: checkY });
+      verticalContinuity.unshift({ x, y: checkY });
     }
 
     for(let checkY = y + 1; checkY < this.settings.height; checkY++) {
@@ -152,37 +191,55 @@ export class GameService {
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
 
-      verticalContinuity.push({ tile: checkTile, x, y: checkY });
+      verticalContinuity.push({ x, y: checkY });
     }
 
     let hasHorizontalMatch = false;
     let hasVerticalMatch = false;
 
+    const brokenTiles = [];
+
     if(horizontalContinuity.length >= 3) {
       hasHorizontalMatch = true;
-      horizontalContinuity.forEach(({ tile, x, y }) => {
-        this.removeTile(x, y);
-      });
+      brokenTiles.push(...horizontalContinuity);
     }
 
     if(verticalContinuity.length >= 3) {
       hasVerticalMatch = true;
-      verticalContinuity.forEach(({ tile, x, y }) => {
-        this.removeTile(x, y);
-      });
+      brokenTiles.push(...verticalContinuity);
     }
 
     if(hasHorizontalMatch || hasVerticalMatch) {
-      this.doGravity();
+
+      const callback = () => {
+        brokenTiles.forEach(({ x, y }) => {
+          this.removeTile(x, y);
+        });
+
+        this.delayExecutionUnlessInitialized(() => this.doGravity());
+      };
+
+      if(!this.hasInit) {
+        callback();
+        return;
+      }
+
+      // wait for animation to finish, then push break
+      setTimeout(() => {
+        this.$break.next({
+          callback,
+          tiles: brokenTiles
+        });
+      });
     }
   }
 
-  private doGravity() {
+  private async doGravity() {
     // if anything falls, check the whole board for matches
     let didAnythingFall = false;
 
     const innerGravity = () => {
-      let didAnythingSwap = false;
+      let swapPromises = [];
 
       for(let y = this.settings.height - 1; y >= 0; y--) {
 
@@ -196,17 +253,65 @@ export class GameService {
           const nextTile = this.getTile(x, y - 1);
           if(!nextTile) continue;
 
-          // we do the swap if this tile is an air tile, and the one above is not
-          didAnythingSwap = true;
-          this.swapPositions(x, y, x, y - 1);
+          // game NOT initialized - swap immediately for no animation
+          if(!this.hasInit) {
+            this.swapPositions(x, y, x, y - 1, true);
+            swapPromises.push(true);
+
+          // game initialized - we do the swap if this tile is an air tile, and the one above is not
+          } else {
+
+            const swapPromise = new Promise(resolve => {
+
+              const meTile = this.getTile(x, y - 1);
+
+              const callback = () => {
+                meTile.isFalling = false;
+                resolve();
+              };
+
+              meTile.isFalling = true;
+              this.swapPositions(x, y, x, y - 1, true);
+
+              if(!this.hasInit) {
+                callback();
+                return;
+              }
+
+              this.$fall.next({
+                callback,
+                tile: { x, y }
+              });
+
+            });
+
+            swapPromises.push(swapPromise);
+          }
         }
       }
 
-      return didAnythingSwap;
+      return swapPromises;
     };
 
-    while(innerGravity()) {
-      didAnythingFall = true;
+    if(!this.hasInit) {
+
+      while(innerGravity().length > 0) {
+        didAnythingFall = true;
+      }
+
+    } else {
+      let innerGravityPromises = [];
+
+      do {
+
+        innerGravityPromises = innerGravity();
+        if(innerGravityPromises.length > 0) {
+          didAnythingFall = true;
+        }
+
+        await Promise.all(innerGravityPromises);
+
+      } while(innerGravityPromises.length > 0);
     }
 
     if(didAnythingFall) {
@@ -214,3 +319,5 @@ export class GameService {
     }
   }
 }
+
+// TODO loop = send animation information to component, component sends back when done
