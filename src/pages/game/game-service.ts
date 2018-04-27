@@ -14,15 +14,17 @@ export class GameService {
 
   // events
   private hasInit: boolean;
+  private isGameOver: boolean;
 
   public $swap = new Subject<{ callback: Function, leftTile: Vec2, rightTile: Vec2 }>();
   public $break = new Subject<{ callback: Function, tiles: Vec2[] }>();
   public $fall = new Subject<{ callback: Function, tile: Vec2 }>();
+  public $move = new Subject<{ offset: number }>();
 
   // settings
   private settings: GameSettings = {
     width: 6,
-    height: 12,
+    height: 11,
     difficulty: 10,
     speed: GameSpeed.Normal
   };
@@ -35,7 +37,11 @@ export class GameService {
   }
 
   // the preview of the next row
-  private nextRow: Tile[];
+  private _nextRow: Tile[];
+
+  public get nextRow(): Tile[] {
+    return this._nextRow;
+  }
 
   public init(): void {
 
@@ -43,7 +49,7 @@ export class GameService {
       this._grid.push([]);
     }
 
-    this.nextRow = this.generateRow();
+    this._nextRow = this.generateRow();
 
     for(let i = 0; i < this.settings.difficulty; i++) {
       this.addRow();
@@ -52,6 +58,8 @@ export class GameService {
     this.settleGameAfterGravity();
 
     this.hasInit = true;
+
+    this.loop();
   }
 
   private delayExecutionUnlessInitialized(func: Function) {
@@ -65,7 +73,39 @@ export class GameService {
     });
   }
 
+  private loop() {
+    const MAX_DIST = 42;
+    const TRAVEL_SPEED = 2;
+    let distToGo = MAX_DIST;
+    
+    this.$move.next({ offset: distToGo });
+
+    const doAction = () => {
+      if(this.isGameOver) return;
+
+      if(distToGo <= 0) {
+        distToGo = MAX_DIST;
+        this.addRow();
+
+        if(this.isGameOver) return;
+
+        this.$move.next({ offset: distToGo });
+        setTimeout(doAction, this.settings.speed);
+        return;
+      }
+
+      distToGo -= TRAVEL_SPEED;
+      this.$move.next({ offset: distToGo });
+
+      setTimeout(doAction, this.settings.speed);
+    };
+
+    setTimeout(doAction, this.settings.speed);
+  }
+
   public swap(x: number, y: number, dir: -1|1) {
+
+    if(this.isGameOver) return;
 
     if(x + dir < 0) return;
     if(x + dir >= this.settings.width) return;
@@ -90,6 +130,7 @@ export class GameService {
 
   private loseGame(): void {
     console.log('YOU LOSE');
+    this.isGameOver = true;
   }
 
   private generateRow(): Tile[] {
@@ -107,12 +148,13 @@ export class GameService {
     const row = this._grid.shift();
 
     if(_.some(row)) {
+      this._grid.unshift(row);
       this.loseGame();
       return;
     }
 
-    this._grid.push(this.nextRow);
-    this.nextRow = this.generateRow();
+    this._grid.push(this._nextRow);
+    this._nextRow = this.generateRow();
   }
 
   private getTile(x: number, y: number): Tile {
@@ -317,5 +359,3 @@ export class GameService {
     }
   }
 }
-
-// TODO loop = send animation information to component, component sends back when done

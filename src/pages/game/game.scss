@@ -11,12 +11,14 @@ page-game {
 
   .container-grid {
     max-width: ($tile-height * $num-horiz-tiles) + ($num-horiz-tiles * 4);
-    max-height: ($tile-height * $num-vert-tiles) + ($num-vert-tiles * 4);
+    max-height: ($tile-height * $num-vert-tiles) + ($num-vert-tiles * 2);
   }
 
   ion-grid {
     height: 100%;
     padding: 0 !important;
+
+    overflow: hidden;
 
     justify-content: flex-end;
 
@@ -28,6 +30,8 @@ page-game {
 
       min-height: $tile-height + 2px !important;
       max-height: $tile-height + 2px !important;
+
+      transform: translateY($tile-height);
 
       ion-col {
         margin: 0 !important;

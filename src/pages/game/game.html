@@ -3,7 +3,7 @@
 
   <ion-grid class="container-grid">
 
-    <ion-row *ngFor="let row of game.grid; let y = index">
+    <ion-row *ngFor="let row of game.grid; let y = index" [style.transform]="transformOffset">
 
       <ion-col *ngFor="let tile of row; let x = index"
                (swipeLeft)="swipeTile(x, y, -1)"
@@ -15,6 +15,14 @@
 
       </ion-col>
 
+    </ion-row>
+
+    <ion-row class="next-row" [style.transform]="transformOffset">
+      <ion-col *ngFor="let tile of game.nextRow">
+        <div class="tile">
+          <img [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
+        </div>
+      </ion-col>
     </ion-row>
 
   </ion-grid>

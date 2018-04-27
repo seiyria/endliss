@@ -19,6 +19,13 @@ export class GamePage {
   private swap$: Subscription;
   private break$; Subscription;
   private fall$: Subscription;
+  private move$: Subscription;
+
+  public offset = 0;
+
+  public get transformOffset(): string {
+    return `translateY(${this.offset}px)`;
+  }
 
   constructor(
     public navCtrl: NavController,
@@ -39,6 +46,10 @@ export class GamePage {
 
     this.fall$ = this.game.$fall.subscribe(({ callback, tile }) => {
       this.animFall(callback, tile);
+    });
+
+    this.move$ = this.game.$move.subscribe(({ offset }) => {
+      this.offset = offset;
     });
   }
 

@@ -1,19 +1,19 @@
 
 export enum GameSpeed {
-  Slowest = 100,
-  Slow = 80,
-  Normal = 60,
-  Fast = 40,
-  Fastest = 20
+  Slowest = 400,
+  Slow = 320,
+  Normal = 240,
+  Fast = 160,
+  Fastest = 80
 }
 
 export enum GameStartingDifficulty {
   Beginner = 1,
-  Easy = 3,
-  Normal = 5,
-  Hard = 7,
-  Expert = 9,
-  Impossible = 11
+  Easy = 2,
+  Normal = 4,
+  Hard = 6,
+  Expert = 7,
+  Impossible = 9
 }
 
 export enum TileColor {
