@@ -5,6 +5,7 @@
   "homepage": "https://endliss.seiyria.com/",
   "private": true,
   "scripts": {
+    "start": "npm run ionic:serve:lab",
     "clean": "ionic-app-scripts clean",
     "build": "ionic-app-scripts build",
     "lint": "ionic-app-scripts lint",
