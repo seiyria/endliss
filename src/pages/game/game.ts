@@ -57,6 +57,7 @@ export class GamePage {
     this.swap$.unsubscribe();
     this.break$.unsubscribe();
     this.fall$.unsubscribe();
+    this.move$.unsubscribe();
   }
 
   swipeTile(x: number, y: number, dir: -1|1) {
