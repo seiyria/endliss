@@ -34,7 +34,11 @@ export class GamePage {
   ) {}
 
   ionViewDidLoad() {
-    this.game.init();
+
+    const speed = this.navParams.get('speed');
+    const difficulty = this.navParams.get('difficulty');
+
+    this.game.init({ speed, difficulty });
 
     this.swap$ = this.game.$swap.subscribe(({ callback, leftTile, rightTile }) => {
       this.animSwap(callback, leftTile, rightTile);

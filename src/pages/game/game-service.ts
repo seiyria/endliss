@@ -25,7 +25,7 @@ export class GameService {
   private settings: GameSettings = {
     width: 6,
     height: 11,
-    difficulty: 10,
+    difficulty: GameStartingDifficulty.Normal,
     speed: GameSpeed.Normal
   };
 
@@ -43,7 +43,14 @@ export class GameService {
     return this._nextRow;
   }
 
-  public init(): void {
+  public init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): void {
+
+    if(opts) {
+      const { speed, difficulty } = opts;
+      
+      if(speed) this.settings.speed = speed;
+      if(difficulty) this.settings.difficulty = difficulty;
+    }
 
     for(let i = 0; i < this.settings.height; i++) {
       this._grid.push([]);
@@ -77,7 +84,7 @@ export class GameService {
     const MAX_DIST = 42;
     const TRAVEL_SPEED = 2;
     let distToGo = MAX_DIST;
-    
+
     this.$move.next({ offset: distToGo });
 
     const doAction = () => {

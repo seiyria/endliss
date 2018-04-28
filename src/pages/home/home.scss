@@ -1,3 +1,31 @@
 page-home {
 
+  ion-grid {
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  .title, .subtitle, .subsubtitle, .label-text {
+    font-family: 'Pacifico', cursive;
+  }
+
+  .title {
+    font-size: 6rem;
+  }
+
+  .subtitle {
+    font-style: italic;
+  }
+
+  .right-button {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .label-text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
 }
