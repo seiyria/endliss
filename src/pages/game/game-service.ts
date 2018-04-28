@@ -199,7 +199,7 @@ export class GameService {
     this._grid.push(this._nextRow);
     this._nextRow = this.generateRow();
 
-    if(_.some(this._grid[4])) this.isPanic = true;
+    if(_.some(this._grid[3])) this.isPanic = true;
     if(_.some(this._grid[1])) this.isSuperPanic = true;
 
     this.settleGameAfterGravity();
