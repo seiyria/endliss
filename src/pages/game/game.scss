@@ -1,13 +1,21 @@
 page-game {
 
-  .scroll-content {
-    display: flex;
-    align-items: flex-end;
-  }
-
   $tile-height: 42px;
   $num-horiz-tiles: 6;
   $num-vert-tiles: 12;
+
+  .scroll-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .score-row {
+    font-family: 'Pacifico', cursive;
+    font-size: 2rem;
+    padding-top: 10px;
+  }
 
   .container-grid {
     max-width: ($tile-height * $num-horiz-tiles) + ($num-horiz-tiles * 4);
@@ -15,7 +23,6 @@ page-game {
   }
 
   .next-row {
-
     img {
       filter: blur(1px) opacity(0.7);
     }
@@ -110,5 +117,42 @@ page-game {
       width: auto;
       height: auto;
     }
+  }
+}
+
+.shrunk-modal {
+
+  ion-title {
+    font-family: 'Pacifico', cursive;
+  }
+
+  .modal-wrapper {
+    position: absolute;
+    left: 12.5%;
+    top: 25%;
+    width: 75%;
+    height: 55%;
+  }
+
+  ion-backdrop {
+    visibility: visible;
+  }
+
+  ion-title {
+    &.title-ios {
+      padding: 0 45px 1px !important;
+
+      .toolbar-title {
+        font-size: 3rem !important;
+      }
+    }
+  }
+
+  .content {
+    font-family: 'Pacifico', cursive;
+    font-size: 2rem;
+    color: #fff;
+    text-align: center;
+    background-color: darken(map-get($colors, 'primary'), 5%);
   }
 }

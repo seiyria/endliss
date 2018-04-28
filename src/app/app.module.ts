@@ -8,12 +8,14 @@ import { IonicStorageModule } from '@ionic/storage';
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 
-import 'hammerjs';
+import { GameLoseModal } from '../pages/game/game';
 
 @NgModule({
   declarations: [
     MyApp,
-    HomePage
+    HomePage,
+    
+    GameLoseModal
   ],
   imports: [
     BrowserModule,
@@ -23,7 +25,9 @@ import 'hammerjs';
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HomePage
+    HomePage,
+
+    GameLoseModal
   ],
   providers: [
     StatusBar,

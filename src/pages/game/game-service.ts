@@ -12,16 +12,14 @@ class GameSettings {
 
 export class GameService {
 
-  // events
   private hasInit: boolean;
-  private isGameOver: boolean;
-  private isPanic: boolean;
-  private isSuperPanic: boolean;
 
+  // events
   public $swap = new Subject<{ callback: Function, leftTile: Vec2, rightTile: Vec2 }>();
   public $break = new Subject<{ callback: Function, tiles: Vec2[] }>();
   public $fall = new Subject<{ callback: Function, tile: Vec2 }>();
   public $move = new Subject<{ offset: number }>();
+  public $lose = new Subject();
 
   // settings
   private settings: GameSettings = {
@@ -45,9 +43,20 @@ export class GameService {
     return this._nextRow;
   }
 
+  private isGameOver: boolean;
+
   public get gameOver(): boolean {
     return this.isGameOver;
   }
+
+  private score = 0;
+
+  public get currentScore(): number {
+    return this.score;
+  }
+
+  private isPanic: boolean;
+  private isSuperPanic: boolean;
 
   public get panicState(): string {
     if(this.isGameOver)   return '';
@@ -151,11 +160,10 @@ export class GameService {
   // TODO pause on match for 100frames (add 100 for every match (bonus for bigger matches), capped at 2000)
 
   private loseGame(): void {
-    console.log('YOU LOSE');
-    // TODO game over popup, opacity 0.x on the rest of the game below it
     // TODO show high score (track high score - blocks cleared mostly, spent)
     // TODO show current score (blocks cleared, time spent)
     this.isGameOver = true;
+    this.$lose.next();
   }
 
   private generateRow(): Tile[] {
@@ -290,14 +298,21 @@ export class GameService {
     if(horizontalContinuity.length >= 3) {
       hasHorizontalMatch = true;
       brokenTiles.push(...horizontalContinuity);
+      console.log('h', horizontalContinuity, horizontalContinuity.length);
     }
 
     if(verticalContinuity.length >= 3) {
       hasVerticalMatch = true;
       brokenTiles.push(...verticalContinuity);
+      console.log('v', verticalContinuity, verticalContinuity.length);
     }
 
     if(hasHorizontalMatch || hasVerticalMatch) {
+
+      if(this.hasInit) {
+        console.log(brokenTiles.length)
+        this.score += brokenTiles.length;
+      }
 
       const callback = () => {
         brokenTiles.forEach(({ x, y }) => {

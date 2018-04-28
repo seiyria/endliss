@@ -1,8 +1,10 @@
-import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Component, OnInit } from '@angular/core';
+import { IonicPage, NavController, ModalController, ViewController, NavParams } from 'ionic-angular';
 import { GameService } from './game-service';
 import { Subscription } from 'rxjs/Subscription';
 import { Vec2 } from './game-models';
+
+import { HomePage } from '../home/home';
 
 import * as _ from 'lodash';
 
@@ -17,9 +19,10 @@ const ANIM_DURATION = 250;
 export class GamePage {
 
   private swap$: Subscription;
-  private break$; Subscription;
+  private break$: Subscription;
   private fall$: Subscription;
   private move$: Subscription;
+  private lose$: Subscription;
 
   public offset = 0;
 
@@ -29,6 +32,7 @@ export class GamePage {
 
   constructor(
     public navCtrl: NavController,
+    public modalCtrl: ModalController,
     public navParams: NavParams,
     private game: GameService
   ) {}
@@ -55,6 +59,10 @@ export class GamePage {
     this.move$ = this.game.$move.subscribe(({ offset }) => {
       this.offset = offset;
     });
+
+    this.lose$ = this.game.$lose.subscribe(() => {
+      this.showLoseModal();
+    });
   }
 
   ionViewDidLeave() {
@@ -62,10 +70,25 @@ export class GamePage {
     this.break$.unsubscribe();
     this.fall$.unsubscribe();
     this.move$.unsubscribe();
+    this.lose$.unsubscribe();
   }
 
   swipeTile(x: number, y: number, dir: -1|1) {
     this.game.swap(x, y, dir);
+  }
+
+  private showLoseModal() {
+    const modal = this.modalCtrl.create(
+      GameLoseModal, 
+      { score: this.game.currentScore }, 
+      { cssClass: 'shrunk-modal', enableBackdropDismiss: false }
+    );
+
+    modal.onDidDismiss(() => {
+      this.navCtrl.setRoot(HomePage);
+    });
+    
+    modal.present();
   }
 
   private async animSwap(callback: Function, leftTile: Vec2, rightTile: Vec2): Promise<void> {
@@ -141,4 +164,37 @@ export class GamePage {
     callback();
   }
 
+}
+
+@Component({
+  template: `
+  <ion-header>
+    <ion-navbar color="endliss">
+      <ion-title>Oh No!</ion-title>
+    </ion-navbar>
+  </ion-header>
+
+  <ion-content padding>
+    <p>
+      You've made a fatal mistake. But that's ok, you can try again. You broke <strong>{{ score | number }}</strong> blocks, though.
+    </p>
+
+    <button ion-button full color="secondary" (click)="tryAgain()">
+      Try Again
+    </button>
+  </ion-content>
+  `
+})
+export class GameLoseModal implements OnInit {
+  public score: number;
+
+  constructor(private navParams: NavParams, private viewCtrl: ViewController) {}
+
+  ngOnInit() {
+    this.score = this.navParams.get('score');
+  }
+
+  tryAgain() {
+    this.viewCtrl.dismiss();
+  }
 }

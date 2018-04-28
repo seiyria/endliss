@@ -5,6 +5,12 @@
     <img src="assets/imgs/app/background.png" />
   </div>
 
+  <ion-row class="score-row">
+    <ion-col>
+      Score: {{ game.currentScore | number }}
+    </ion-col>
+  </ion-row>
+
   <ion-grid class="container-grid" [ngClass]="game.panicState">
 
     <ion-row *ngFor="let row of game.grid; let y = index" [style.transform]="transformOffset">
