@@ -148,10 +148,13 @@ export class GameService {
     });
   }
 
-  // TODO pause on match for 100frames (add 100 for every match, capped at 2000)
+  // TODO pause on match for 100frames (add 100 for every match (bonus for bigger matches), capped at 2000)
 
   private loseGame(): void {
     console.log('YOU LOSE');
+    // TODO game over popup, opacity 0.x on the rest of the game below it
+    // TODO show high score (track high score - blocks cleared mostly, spent)
+    // TODO show current score (blocks cleared, time spent)
     this.isGameOver = true;
   }
 
