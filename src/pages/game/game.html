@@ -1,7 +1,11 @@
 
 <ion-content>
 
-  <ion-grid class="container-grid">
+  <div class="image-background">
+    <img src="assets/imgs/app/background.png" />
+  </div>
+
+  <ion-grid class="container-grid" [ngClass]="game.panicState">
 
     <ion-row *ngFor="let row of game.grid; let y = index" [style.transform]="transformOffset">
 
@@ -17,7 +21,7 @@
 
     </ion-row>
 
-    <ion-row class="next-row" [style.transform]="transformOffset">
+    <ion-row [class.next-row]="!game.gameOver" [style.transform]="transformOffset">
       <ion-col *ngFor="let tile of game.nextRow">
         <div class="tile">
           <img [src]="'assets/imgs/tiles/' + tile.color + '.png'" />

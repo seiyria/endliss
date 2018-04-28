@@ -15,6 +15,8 @@ export class GameService {
   // events
   private hasInit: boolean;
   private isGameOver: boolean;
+  private isPanic: boolean;
+  private isSuperPanic: boolean;
 
   public $swap = new Subject<{ callback: Function, leftTile: Vec2, rightTile: Vec2 }>();
   public $break = new Subject<{ callback: Function, tiles: Vec2[] }>();
@@ -43,11 +45,22 @@ export class GameService {
     return this._nextRow;
   }
 
+  public get gameOver(): boolean {
+    return this.isGameOver;
+  }
+
+  public get panicState(): string {
+    if(this.isGameOver)   return '';
+    if(this.isSuperPanic) return 'super-panic';
+    if(this.isPanic)      return 'panic';
+    return '';
+  }
+
   public init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): void {
 
     if(opts) {
       const { speed, difficulty } = opts;
-      
+
       if(speed) this.settings.speed = speed;
       if(difficulty) this.settings.difficulty = difficulty;
     }
@@ -135,6 +148,8 @@ export class GameService {
     });
   }
 
+  // TODO pause on match for 100frames (add 100 for every match, capped at 2000)
+
   private loseGame(): void {
     console.log('YOU LOSE');
     this.isGameOver = true;
@@ -148,7 +163,25 @@ export class GameService {
       return tile;
     };
 
-    return new Array(this.settings.width).fill(null).map(createRandomTile);
+    const baseArr = new Array(this.settings.width).fill(null);
+
+    baseArr.forEach((val, idx) => {
+      if(idx === 0) {
+        baseArr[0] = createRandomTile();
+        return;
+      }
+
+      const prevTile = baseArr[idx - 1];
+      let tile = createRandomTile();
+
+      while(prevTile.color === tile.color) {
+        tile = createRandomTile();
+      }
+
+      baseArr[idx] = tile;
+    });
+
+    return baseArr;
   }
 
   private addRow(): void {
@@ -162,6 +195,11 @@ export class GameService {
 
     this._grid.push(this._nextRow);
     this._nextRow = this.generateRow();
+
+    if(_.some(this._grid[4])) this.isPanic = true;
+    if(_.some(this._grid[1])) this.isSuperPanic = true;
+
+    this.settleGameAfterGravity();
   }
 
   private getTile(x: number, y: number): Tile {
