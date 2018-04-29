@@ -169,8 +169,6 @@ export class GameService {
     return callback();
   }
 
-  // TODO pause on match for 100frames (add 100 for every match (bonus for bigger matches), capped at 2000)
-
   private loseGame(): void {
     this.isGameOver = true;
     this.$lose.next();
