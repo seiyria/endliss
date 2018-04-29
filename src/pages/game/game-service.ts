@@ -114,6 +114,11 @@ export class GameService {
     const doAction = () => {
       if(this.isGameOver) return;
 
+      if(this.isPaused) {
+        setTimeout(doAction, this.settings.speed);
+        return;
+      }
+
       // pause frames
       if(this.pauseFrames > 0) {
         this.pauseFrames -= this.settings.speed;
@@ -135,12 +140,9 @@ export class GameService {
       }
 
       // not paused, not adding a row, go down
-      if(!this.isPaused) {
-        distToGo -= TRAVEL_SPEED;
-        this.$move.next({ offset: distToGo });
-        setTimeout(doAction, this.settings.speed);
-        return;
-      }
+      distToGo -= TRAVEL_SPEED;
+      this.$move.next({ offset: distToGo });
+      setTimeout(doAction, this.settings.speed);
     };
 
     setTimeout(doAction, this.settings.speed);
