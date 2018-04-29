@@ -158,8 +158,11 @@ export class GameService {
 
     const callback = async () => {
       this.swapPositions(x, y, x + dir, y);
-      this.checkForMatchesAround(x, y);
-      this.checkForMatchesAround(x + dir, y);
+
+      this.delayExecutionUnlessInitialized(() => {
+        this.checkForMatchesAround(x, y);
+        this.checkForMatchesAround(x + dir, y);
+      });
 
       return this.doGravity();
     };
@@ -345,12 +348,11 @@ export class GameService {
       };
 
       if(!this.hasInit) {
-        callback();
-        return;
+        return callback();
       }
 
       // wait for animation to finish, then push break
-      // await this.animBreak(brokenTiles);
+      await this.animBreak(brokenTiles);
 
       return callback();
     }
@@ -497,7 +499,7 @@ export class GameService {
       ], { duration: ANIM_DURATION });
     });
 
-    const allPromises = allAnimations.map(anim => new Promise(resolve => anim.onfinish = () => resolve()));
+    const allPromises = allAnimations.map(anim => new Promise(resolve => anim.onfinish = resolve));
 
     return Promise.all(allPromises);
   }
