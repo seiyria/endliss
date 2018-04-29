@@ -91,6 +91,25 @@ export class GamePage {
     modal.present();
   }
 
+  private pauseModal() {
+    const modal = this.modalCtrl.create(
+      PauseModal, 
+      {}, 
+      { cssClass: 'shrunk-modal' }
+    );
+
+    this.game.pause();
+
+    modal.onDidDismiss((val) => {
+      this.game.unpause();
+
+      if(!val) return;
+      this.navCtrl.setRoot(HomePage);
+    });
+    
+    modal.present();
+  }
+
   private async animSwap(callback: Function, leftTile: Vec2, rightTile: Vec2): Promise<void> {
     const leftEl = <HTMLElement>document.querySelectorAll(`[x="${leftTile.x}"][y="${leftTile.y}"]`)[0];
     const rightEl = <HTMLElement>document.querySelectorAll(`[x="${rightTile.x}"][y="${rightTile.y}"]`)[0];
@@ -164,6 +183,48 @@ export class GamePage {
     callback();
   }
 
+}
+
+@Component({
+  template: `
+  <ion-header>
+    <ion-navbar color="endliss">
+      <ion-title>Paused</ion-title>
+    </ion-navbar>
+  </ion-header>
+
+  <ion-content padding>
+    <p>
+      You've paused. You can resume, or quit, whichever suits your fancy.
+    </p>
+
+    <ion-row>
+      <ion-col>
+        <button ion-button full color="danger" (click)="quit()">
+          Quit
+        </button>
+      </ion-col>
+
+      <ion-col>
+        <button ion-button full color="secondary" (click)="resume()">
+          Resume
+        </button>
+      </ion-col>
+    </ion-row>
+  </ion-content>
+  `
+})
+export class PauseModal {
+
+  constructor(private viewCtrl: ViewController) {}
+
+  quit() {
+    this.viewCtrl.dismiss(true);
+  }
+
+  resume() {
+    this.viewCtrl.dismiss();
+  }
 }
 
 @Component({

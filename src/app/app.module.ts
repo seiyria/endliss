@@ -8,14 +8,15 @@ import { IonicStorageModule } from '@ionic/storage';
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 
-import { GameLoseModal } from '../pages/game/game';
+import { GameLoseModal, PauseModal } from '../pages/game/game';
 
 @NgModule({
   declarations: [
     MyApp,
     HomePage,
     
-    GameLoseModal
+    GameLoseModal,
+    PauseModal
   ],
   imports: [
     BrowserModule,
@@ -27,7 +28,8 @@ import { GameLoseModal } from '../pages/game/game';
     MyApp,
     HomePage,
 
-    GameLoseModal
+    GameLoseModal,
+    PauseModal
   ],
   providers: [
     StatusBar,

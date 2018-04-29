@@ -6,9 +6,17 @@
   </div>
 
   <ion-row class="score-row">
-    <ion-col>
+
+    <ion-col col-9 no-padding>
       Score: {{ game.currentScore | number }}
     </ion-col>
+
+    <ion-col no-padding class="button-col">
+      <button ion-button icon-only color="dark" outline small (click)="pauseModal()">
+        <ion-icon name="pause"></ion-icon>
+      </button>
+    </ion-col>
+
   </ion-row>
 
   <ion-grid class="container-grid" [ngClass]="game.panicState">

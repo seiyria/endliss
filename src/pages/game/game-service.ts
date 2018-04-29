@@ -65,6 +65,8 @@ export class GameService {
     return '';
   }
 
+  private isPaused: boolean;
+
   public init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): void {
 
     if(opts) {
@@ -123,8 +125,10 @@ export class GameService {
         return;
       }
 
-      distToGo -= TRAVEL_SPEED;
-      this.$move.next({ offset: distToGo });
+      if(!this.isPaused) {
+        distToGo -= TRAVEL_SPEED;
+        this.$move.next({ offset: distToGo });
+      }
 
       setTimeout(doAction, this.settings.speed);
     };
@@ -420,5 +424,13 @@ export class GameService {
     if(didAnythingFall) {
       this.settleGameAfterGravity();
     }
+  }
+
+  public pause() {
+    this.isPaused = true;
+  }
+
+  public unpause() {
+    this.isPaused = false;
   }
 }

@@ -5,6 +5,10 @@ page-home {
     height: 100%;
   }
 
+  .title, .subtitle, .subsubtitle {
+    letter-spacing: 1px;
+  }
+
   .title, .subtitle, .subsubtitle, .label-text {
     font-family: 'Pacifico', cursive;
   }
@@ -17,6 +21,11 @@ page-home {
     font-style: italic;
   }
 
+  .subsubtitle {
+    font-weight: bold;
+    font-size: 2rem;
+  }
+
   .right-button {
     display: flex;
     justify-content: flex-end;
@@ -26,6 +35,7 @@ page-home {
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 2rem;
   }
 
 }
