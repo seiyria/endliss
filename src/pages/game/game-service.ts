@@ -67,7 +67,7 @@ export class GameService {
 
   private isPaused: boolean;
 
-  public init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): void {
+  public async init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): void {
 
     if(opts) {
       const { speed, difficulty } = opts;
@@ -86,21 +86,24 @@ export class GameService {
       this.addRow();
     }
 
-    this.settleGameAfterGravity();
+    await this.settleGameAfterGravity();
 
     this.hasInit = true;
 
     this.loop();
   }
 
-  private delayExecutionUnlessInitialized(func: Function) {
+  private async delayExecutionUnlessInitialized(func: Function): Promise<any> {
     if(!this.hasInit) {
       func();
       return;
     }
 
-    setTimeout(() => {
-      func();
+    return new Promise(resolve => {
+      setTimeout(async () => {
+        await func();
+        resolve();
+      });
     });
   }
 
@@ -143,8 +146,10 @@ export class GameService {
       distToGo -= TRAVEL_SPEED;
       this.$move.next({ offset: distToGo });
       setTimeout(doAction, this.settings.speed);
+      return;
     };
 
+    // start the loop
     setTimeout(doAction, this.settings.speed);
   }
 
@@ -255,10 +260,10 @@ export class GameService {
     this.setTile(newX, newY, oldTile);
   }
 
-  private settleGameAfterGravity(): void {
+  private async settleGameAfterGravity(): Promise<any> {
     for(let y = 0; y < this.settings.height; y++) {
       for(let x = 0; x < this.settings.width; x++) {
-        this.checkForMatchesAround(x, y);
+        await this.checkForMatchesAround(x, y);
       }
     }
   }
@@ -380,7 +385,7 @@ export class GameService {
           if(!nextTile) continue;
 
           // game NOT initialized - swap immediately for no animation
-          if(!this.hasInit) {
+          if(!this.hasInit || true) {
             this.swapPositions(x, y, x, y - 1, true);
             swapPromises.push(true);
 
@@ -417,7 +422,7 @@ export class GameService {
       return swapPromises;
     };
 
-    if(!this.hasInit) {
+    if(!this.hasInit || true) {
 
       while(innerGravity().length > 0) {
         didAnythingFall = true;
@@ -439,7 +444,9 @@ export class GameService {
     }
 
     if(didAnythingFall) {
-      this.settleGameAfterGravity();
+      await this.delayExecutionUnlessInitialized(() => {
+        return this.settleGameAfterGravity();
+      });
     }
 
     this.checkPanicState();
