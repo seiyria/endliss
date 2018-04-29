@@ -3,6 +3,8 @@ import { GameSpeed, GameStartingDifficulty, Tile, TileColor, Vec2 } from './game
 import * as _ from 'lodash';
 import { Subject } from 'rxjs/Subject';
 
+const ANIM_DURATION = 250;
+
 class GameSettings {
   width: number;
   height: number;
@@ -15,9 +17,6 @@ export class GameService {
   private hasInit: boolean;
 
   // events
-  public $swap = new Subject<{ callback: Function, leftTile: Vec2, rightTile: Vec2 }>();
-  public $break = new Subject<{ callback: Function, tiles: Vec2[] }>();
-  public $fall = new Subject<{ callback: Function, tile: Vec2 }>();
   public $move = new Subject<{ offset: number }>();
   public $lose = new Subject();
 
@@ -151,14 +150,12 @@ export class GameService {
       this.checkForMatchesAround(x, y);
       this.checkForMatchesAround(x + dir, y);
 
-      await this.doGravity();
+      return this.doGravity();
     };
 
-    this.$swap.next({
-      callback,
-      leftTile,
-      rightTile
-    });
+    // await this.animSwap(leftTile, rightTile);
+
+    return callback();
   }
 
   // TODO pause on match for 100frames (add 100 for every match (bonus for bigger matches), capped at 2000)
@@ -210,10 +207,14 @@ export class GameService {
     this._grid.push(this._nextRow);
     this._nextRow = this.generateRow();
 
-    if(_.some(this._grid[3])) this.isPanic = true;
-    if(_.some(this._grid[1])) this.isSuperPanic = true;
+    this.checkPanicState();
 
     this.settleGameAfterGravity();
+  }
+
+  private checkPanicState() {
+    this.isPanic = _.some(this._grid[3]);
+    this.isSuperPanic = _.some(this._grid[1]);
   }
 
   private getTile(x: number, y: number): Tile {
@@ -301,19 +302,16 @@ export class GameService {
     if(horizontalContinuity.length >= 3) {
       hasHorizontalMatch = true;
       brokenTiles.push(...horizontalContinuity);
-      console.log('h', horizontalContinuity, horizontalContinuity.length);
     }
 
     if(verticalContinuity.length >= 3) {
       hasVerticalMatch = true;
       brokenTiles.push(...verticalContinuity);
-      console.log('v', verticalContinuity, verticalContinuity.length);
     }
 
     if(hasHorizontalMatch || hasVerticalMatch) {
 
       if(this.hasInit) {
-        console.log(brokenTiles.length)
         this.score += brokenTiles.length;
       }
 
@@ -322,7 +320,7 @@ export class GameService {
           this.removeTile(x, y);
         });
 
-        await this.doGravity();
+        return this.doGravity();
       };
 
       if(!this.hasInit) {
@@ -331,12 +329,9 @@ export class GameService {
       }
 
       // wait for animation to finish, then push break
-      setTimeout(() => {
-        this.$break.next({
-          callback,
-          tiles: brokenTiles
-        });
-      });
+      // await this.animBreak(brokenTiles);
+
+      return callback();
     }
   }
 
@@ -367,7 +362,7 @@ export class GameService {
           // game initialized - we do the swap if this tile is an air tile, and the one above is not
           } else {
 
-            const swapPromise = new Promise(resolve => {
+            const swapPromise = new Promise(async resolve => {
 
               const meTile = this.getTile(x, y - 1);
 
@@ -384,11 +379,9 @@ export class GameService {
                 return;
               }
 
-              this.$fall.next({
-                callback,
-                tile: { x, y }
-              });
+              // await this.animFall({ x, y });
 
+              callback();
             });
 
             swapPromises.push(swapPromise);
@@ -423,13 +416,85 @@ export class GameService {
     if(didAnythingFall) {
       this.settleGameAfterGravity();
     }
+
+    this.checkPanicState();
   }
 
+  // pause related
   public pause() {
     this.isPaused = true;
   }
 
   public unpause() {
     this.isPaused = false;
+  }
+
+  // animation related
+
+  private async animSwap(leftTile: Vec2, rightTile: Vec2): Promise<any> {
+    const leftEl = <HTMLElement>document.querySelectorAll(`[x="${leftTile.x}"][y="${leftTile.y}"]`)[0];
+    const rightEl = <HTMLElement>document.querySelectorAll(`[x="${rightTile.x}"][y="${rightTile.y}"]`)[0];
+
+    const styleChange = {
+      transition: `all ${ANIM_DURATION}ms ease 0s`
+    };
+
+    _.extend(leftEl.style, styleChange);
+    _.extend(rightEl.style, styleChange);
+
+    const leftAnim = (<any>leftEl).animate([
+      { transform: 'translateX(0px)' },
+      { transform: 'translateX(44px)' }
+    ], { duration: ANIM_DURATION });
+
+    const rightAnim = (<any>rightEl).animate([
+      { transform: 'translateX(0px)' },
+      { transform: 'translateX(-44px)' }
+    ], { duration: ANIM_DURATION });
+
+    const isLeftFinished = new Promise(resolve => leftAnim.onfinish = () => resolve());
+    const isRightFinished = new Promise(resolve => rightAnim.onfinish = () => resolve());
+
+    return Promise.all([isLeftFinished, isRightFinished]);
+  }
+
+  private async animBreak(tiles: Vec2[]): Promise<any> {
+    const styleChange = {
+      transition: `all ${ANIM_DURATION}ms ease 0s`
+    };
+
+    const allElements = tiles.map(({ x, y }) => {
+      const el = <HTMLElement>document.querySelectorAll(`[x="${x}"][y="${y}"]`)[0];
+      _.extend(el.style, styleChange);
+      return el;
+    });
+
+    const allAnimations = allElements.map(el => {
+      return (<any>el).animate([
+        { transform: 'scale(1) rotate(0deg)' },
+        { transform: 'scale(0.1) rotate(120deg)' }
+      ], { duration: ANIM_DURATION });
+    });
+
+    const allPromises = allAnimations.map(anim => new Promise(resolve => anim.onfinish = () => resolve()));
+
+    return Promise.all(allPromises);
+  }
+
+  private async animFall(tile: Vec2): Promise<any> {
+    const el = <HTMLElement>document.querySelectorAll(`[x="${tile.x}"][y="${tile.y}"]`)[0];
+
+    const styleChange = {
+      transition: `all ${ANIM_DURATION}ms ease 0s`
+    };
+
+    _.extend(el.style, styleChange);
+
+    const anim = (<any>el).animate([
+      { transform: 'translateY(0px)' },
+      { transform: 'translateY(44px)' }
+    ], { duration: ANIM_DURATION });
+
+    return new Promise(resolve => anim.onfinish = () => resolve());
   }
 }
