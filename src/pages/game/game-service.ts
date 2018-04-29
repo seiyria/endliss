@@ -136,7 +136,7 @@ export class GameService {
     setTimeout(doAction, this.settings.speed);
   }
 
-  public swap(x: number, y: number, dir: -1|1) {
+  public async swap(x: number, y: number, dir: -1|1) {
 
     if(this.isGameOver) return;
 
@@ -146,12 +146,12 @@ export class GameService {
     const leftTile = dir === -1 ? { x: x + dir, y } : { x, y };
     const rightTile = dir === -1 ? { x, y } : { x: x + dir, y };
 
-    const callback = () => {
+    const callback = async () => {
       this.swapPositions(x, y, x + dir, y);
       this.checkForMatchesAround(x, y);
       this.checkForMatchesAround(x + dir, y);
 
-      this.delayExecutionUnlessInitialized(() => this.doGravity());
+      await this.doGravity();
     };
 
     this.$swap.next({
@@ -165,7 +165,6 @@ export class GameService {
 
   private loseGame(): void {
     // TODO show high score (track high score - blocks cleared mostly, spent)
-    // TODO show current score (blocks cleared, time spent)
     this.isGameOver = true;
     this.$lose.next();
   }
@@ -250,7 +249,7 @@ export class GameService {
     }
   }
 
-  private checkForMatchesAround(x: number, y: number) {
+  private async checkForMatchesAround(x: number, y: number) {
     const tile = this.getTile(x, y);
     if(!tile) return;
 
@@ -318,12 +317,12 @@ export class GameService {
         this.score += brokenTiles.length;
       }
 
-      const callback = () => {
+      const callback = async () => {
         brokenTiles.forEach(({ x, y }) => {
           this.removeTile(x, y);
         });
 
-        this.delayExecutionUnlessInitialized(() => this.doGravity());
+        await this.doGravity();
       };
 
       if(!this.hasInit) {
