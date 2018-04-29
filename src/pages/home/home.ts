@@ -63,6 +63,12 @@ export class HomePage implements OnInit {
     return diff.scale;
   }
 
+  private scores: { [key: string]: number } = {};
+  
+  public get currentScore(): number {
+    return this.scores[this.currentDifficulty] || 0;
+  }
+
   constructor(
     public navCtrl: NavController,
     private storage: Storage
@@ -71,6 +77,7 @@ export class HomePage implements OnInit {
   async ngOnInit() {
     this.currentDifficulty = await this.storage.get('currentDifficulty') || 2;
     this.currentSpeed = await this.storage.get('currentSpeed') || 2;
+    this.scores = await this.storage.get('scores') || {};
   }
 
   public changeDifficulty(dir: -1|1) {

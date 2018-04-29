@@ -1,12 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { IonicPage, NavController, ModalController, ViewController, NavParams } from 'ionic-angular';
+import { Storage } from '@ionic/storage';
 import { GameService } from './game-service';
 import { Subscription } from 'rxjs/Subscription';
-import { Vec2 } from './game-models';
 
 import { HomePage } from '../home/home';
-
-import * as _ from 'lodash';
+import { GameStartingDifficulty, GameSpeed } from './game-models';
 
 @IonicPage()
 @Component({
@@ -29,13 +28,14 @@ export class GamePage {
     public navCtrl: NavController,
     public modalCtrl: ModalController,
     public navParams: NavParams,
+    private storage: Storage,
     private game: GameService
   ) {}
 
   ionViewDidLoad() {
 
-    const speed = this.navParams.get('speed');
-    const difficulty = this.navParams.get('difficulty');
+    const speed = this.navParams.get('speed') || GameSpeed.Normal;
+    const difficulty = this.navParams.get('difficulty') || GameStartingDifficulty.Normal;
 
     this.game.init({ speed, difficulty });
 
@@ -43,7 +43,13 @@ export class GamePage {
       this.offset = offset;
     });
 
-    this.lose$ = this.game.$lose.subscribe(() => {
+    this.lose$ = this.game.$lose.subscribe(async () => {
+
+      const scores = await this.storage.get('scores') || {};
+      if(!scores[difficulty]) scores[difficulty] = 0;
+      scores[difficulty] = Math.max(scores[difficulty], this.game.currentScore);
+      await this.storage.set('scores', scores);
+
       this.showLoseModal();
     });
   }
@@ -71,7 +77,7 @@ export class GamePage {
     modal.present();
   }
 
-  private pauseModal() {
+  public pauseModal() {
     const modal = this.modalCtrl.create(
       PauseModal, 
       {}, 
