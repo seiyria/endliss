@@ -144,7 +144,7 @@ export class PauseModal {
 
   <ion-content padding>
     <p>
-      You've made a fatal mistake. But that's ok, you can try again. You broke <strong>{{ score | number }}</strong> blocks, though.
+      You've made a fatal mistake. But that's okay, you can try again. You broke <strong>{{ score | number }}</strong> blocks this time.
     </p>
 
     <button ion-button full color="secondary" (click)="tryAgain()">

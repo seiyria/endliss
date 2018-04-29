@@ -15,6 +15,7 @@ class GameSettings {
 export class GameService {
 
   private hasInit: boolean;
+  private pauseFrames = 0;
 
   // events
   public $move = new Subject<{ offset: number }>();
@@ -113,6 +114,15 @@ export class GameService {
     const doAction = () => {
       if(this.isGameOver) return;
 
+      // pause frames
+      if(this.pauseFrames > 0) {
+        this.pauseFrames -= this.settings.speed;
+        if(this.pauseFrames <= 0) this.pauseFrames = 0;
+        setTimeout(doAction, this.settings.speed);
+        return;
+      }
+
+      // adding a row
       if(distToGo <= 0) {
         distToGo = MAX_DIST;
         this.addRow();
@@ -124,12 +134,13 @@ export class GameService {
         return;
       }
 
+      // not paused, not adding a row, go down
       if(!this.isPaused) {
         distToGo -= TRAVEL_SPEED;
         this.$move.next({ offset: distToGo });
+        setTimeout(doAction, this.settings.speed);
+        return;
       }
-
-      setTimeout(doAction, this.settings.speed);
     };
 
     setTimeout(doAction, this.settings.speed);
@@ -161,7 +172,6 @@ export class GameService {
   // TODO pause on match for 100frames (add 100 for every match (bonus for bigger matches), capped at 2000)
 
   private loseGame(): void {
-    // TODO show high score (track high score - blocks cleared mostly, spent)
     this.isGameOver = true;
     this.$lose.next();
   }
@@ -250,7 +260,18 @@ export class GameService {
     }
   }
 
-  private async checkForMatchesAround(x: number, y: number) {
+  private gainPauseFrames(brokenTiles: number): void {
+    if(this.isGameOver || !this.hasInit) return;
+
+    this.pauseFrames += 150 * brokenTiles;
+    if(brokenTiles > 3) this.pauseFrames += 250;
+    if(brokenTiles > 4) this.pauseFrames += 250;
+    if(brokenTiles > 5) this.pauseFrames += 250;
+
+    this.pauseFrames = Math.min(2000, this.pauseFrames);
+  }
+
+  private async checkForMatchesAround(x: number, y: number): Promise<any> {
     const tile = this.getTile(x, y);
     if(!tile) return;
 
@@ -316,6 +337,8 @@ export class GameService {
       }
 
       const callback = async () => {
+        this.gainPauseFrames(brokenTiles.length);
+
         brokenTiles.forEach(({ x, y }) => {
           this.removeTile(x, y);
         });
