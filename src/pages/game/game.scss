@@ -11,12 +11,20 @@ page-game {
     justify-content: space-between;
   }
 
+  .content-md .score-row {
+    padding-left: 49.5px;
+    padding-right: 49.5px;
+  }
+
+  .content-ios .score-row {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
   .score-row {
     font-family: 'Pacifico', cursive;
     font-size: 2rem;
     padding-top: 10px;
-    padding-left: 32px;
-    padding-right: 32px;
     width: 100%;
 
     .button-col {
