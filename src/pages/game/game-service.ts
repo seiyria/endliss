@@ -164,7 +164,7 @@ export class GameService {
       return this.doGravity();
     };
 
-    // await this.animSwap(leftTile, rightTile);
+    await this.animSwap(leftTile, rightTile);
 
     return callback();
   }
