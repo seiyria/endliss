@@ -24,8 +24,7 @@
     <ion-row *ngFor="let row of game.grid; let y = index" [style.transform]="transformOffset">
 
       <ion-col *ngFor="let tile of row; let x = index"
-               (swipeleft)="swipeTile(tile, -1)"
-               (swiperight)="swipeTile(tile, 1)">
+               (swipe)="swipeAny(tile, $event)">
 
         <div class="tile" [attr.x]="x" [attr.y]="y" [attr.tile-id]="tile ? tile.id : ''">
           <img *ngIf="tile" [src]="'assets/imgs/tiles/' + tile.color + '.png'" />

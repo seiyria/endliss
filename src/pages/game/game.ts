@@ -59,6 +59,11 @@ export class GamePage {
     this.lose$.unsubscribe();
   }
 
+  swipeAny(tile: Tile, $event) {
+    const dir = $event.deltaX < 0 ? -1 : 1;
+    this.swipeTile(tile, dir);
+  }
+
   swipeTile(tile: Tile, dir: -1|1) {
     this.game.swap(tile, dir);
   }
