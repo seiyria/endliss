@@ -338,13 +338,29 @@ export class GameService {
     return true;
   }
 
+  private getPauseFrameMultiplierForDifficulty(): number {
+    switch(this.settings.difficulty) {
+      case GameStartingDifficulty.Beginner:   return 2;
+      case GameStartingDifficulty.Easy:       return 1.5;
+      case GameStartingDifficulty.Normal:     return 1;
+      case GameStartingDifficulty.Hard:       return 0.75;
+      case GameStartingDifficulty.Expert:     return 0.5;
+      case GameStartingDifficulty.Impossible: return 0.1;
+    }
+  }
+
   private gainPauseFrames(brokenTiles: number): void {
     if(this.isGameOver || !this.hasInit) return;
 
-    this.pauseFrames += 100 * brokenTiles;
-    if(brokenTiles > 3) this.pauseFrames += 150;
-    if(brokenTiles > 4) this.pauseFrames += 150;
-    if(brokenTiles > 5) this.pauseFrames += 150;
+    const frameMult = this.getPauseFrameMultiplierForDifficulty();
+    const bonus = 100 * frameMult;
+
+    this.pauseFrames += 75 * brokenTiles * frameMult;
+
+    if(brokenTiles > 3) this.pauseFrames += bonus;
+    if(brokenTiles > 4) this.pauseFrames += bonus;
+    if(brokenTiles > 5) this.pauseFrames += bonus;
+    if(brokenTiles > 6) this.pauseFrames += bonus;
 
     this.pauseFrames = Math.min(1000, this.pauseFrames);
   }
