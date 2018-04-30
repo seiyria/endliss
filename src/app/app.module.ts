@@ -10,11 +10,13 @@ import { HomePage } from '../pages/home/home';
 
 import { GameLoseModal, PauseModal } from '../pages/game/game';
 
+import 'hammerjs';
+
 @NgModule({
   declarations: [
     MyApp,
     HomePage,
-    
+
     GameLoseModal,
     PauseModal
   ],
