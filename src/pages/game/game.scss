@@ -120,6 +120,8 @@ page-game {
   }
 
   .tile {
+    user-select: none;
+    pointer-events: none;
     object-fit: contain;
     min-width: $tile-height !important;
     max-width: $tile-height !important;
