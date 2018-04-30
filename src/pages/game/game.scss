@@ -128,7 +128,7 @@ page-game {
     max-height: $tile-height !important;
 
     &.hovered {
-      outline: 2px dashed #000;
+      outline: 2px solid #000;
     }
 
     &.transparent {
