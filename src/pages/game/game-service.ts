@@ -310,6 +310,8 @@ export class GameService {
   }
 
   private async checkForMatchesAround(x: number, y: number): Promise<any> {
+    await this.allAnimations;
+
     const tile = this.getTile(x, y);
     if(!tile) return;
 
@@ -426,62 +428,82 @@ export class GameService {
   private async animSwap(leftTile: Vec2, rightTile: Vec2): Promise<any> {
     if(!this.hasInit) return;
 
-    const leftEl = <HTMLElement>document.querySelectorAll(`[x="${leftTile.x}"][y="${leftTile.y}"]`)[0];
-    const rightEl = <HTMLElement>document.querySelectorAll(`[x="${rightTile.x}"][y="${rightTile.y}"]`)[0];
+    return new Promise(resolve => {
+      setTimeout(async () => {
+        await this.allAnimations;
 
-    const styleChange = {
-      transition: `all ${ANIM_DURATION}ms ease 0s`
-    };
+        const leftEl = <HTMLElement>document.querySelectorAll(`[x="${leftTile.x}"][y="${leftTile.y}"]`)[0];
+        const rightEl = <HTMLElement>document.querySelectorAll(`[x="${rightTile.x}"][y="${rightTile.y}"]`)[0];
 
-    _.extend(leftEl.style, styleChange);
-    _.extend(rightEl.style, styleChange);
+        if(!leftEl || !rightEl) return;
 
-    const leftAnim = (<any>leftEl).animate([
-      { transform: 'translateX(0px)' },
-      { transform: 'translateX(44px)' }
-    ], { duration: ANIM_DURATION });
+        const styleChange = {
+          transition: `all ${ANIM_DURATION}ms ease 0s`
+        };
 
-    const rightAnim = (<any>rightEl).animate([
-      { transform: 'translateX(0px)' },
-      { transform: 'translateX(-44px)' }
-    ], { duration: ANIM_DURATION });
+        _.extend(leftEl.style, styleChange);
+        _.extend(rightEl.style, styleChange);
 
-    const isLeftFinished = new Promise(resolve => leftAnim.onfinish = () => resolve());
-    const isRightFinished = new Promise(resolve => rightAnim.onfinish = () => resolve());
+        const leftAnim = (<any>leftEl).animate([
+          { transform: 'translateX(0px)' },
+          { transform: 'translateX(44px)' }
+        ], { duration: ANIM_DURATION });
 
-    const promise = Promise.all([isLeftFinished, isRightFinished]);
+        const rightAnim = (<any>rightEl).animate([
+          { transform: 'translateX(0px)' },
+          { transform: 'translateX(-44px)' }
+        ], { duration: ANIM_DURATION });
 
-    this.allAnimations.push(promise);
+        const isLeftFinished = new Promise(resolve => leftAnim.onfinish = () => resolve());
+        const isRightFinished = new Promise(resolve => rightAnim.onfinish = () => resolve());
 
-    return promise;
+        const promise = Promise.all([isLeftFinished, isRightFinished]);
+
+        this.allAnimations.push(promise);
+
+        await promise;
+        resolve();
+      });
+    });
   }
 
   private async animBreak(tiles: Vec2[]): Promise<any> {
     if(!this.hasInit) return;
 
-    const styleChange = {
-      transition: `all ${ANIM_DURATION}ms ease 0s`
-    };
+    return new Promise(resolve => {
+      setTimeout(async () => {
+        await this.allAnimations;
 
-    const allElements = tiles.map(({ x, y }) => {
-      const el = <HTMLElement>document.querySelectorAll(`[x="${x}"][y="${y}"]`)[0];
-      _.extend(el.style, styleChange);
-      return el;
+        const styleChange = {
+          transition: `all ${ANIM_DURATION}ms ease 0s`
+        };
+
+        const allElements = _.compact(tiles.map(({ x, y }) => {
+          const el = <HTMLElement>document.querySelectorAll(`[x="${x}"][y="${y}"]`)[0];
+          if(!el) return null;
+
+          _.extend(el.style, styleChange);
+          return el;
+        }));
+
+        if(allElements.length === 0) return;
+
+        const allAnimations = allElements.map(el => {
+          return (<any>el).animate([
+            { transform: 'scale(1) rotate(0deg)' },
+            { transform: 'scale(0.1) rotate(120deg)' }
+          ], { duration: ANIM_DURATION });
+        });
+
+        const allPromises = allAnimations.map(anim => new Promise(resolve => anim.onfinish = resolve));
+
+        const promise = Promise.all(allPromises);
+
+        this.allAnimations.push(promise);
+
+        await promise;
+        resolve();
+      })
     });
-
-    const allAnimations = allElements.map(el => {
-      return (<any>el).animate([
-        { transform: 'scale(1) rotate(0deg)' },
-        { transform: 'scale(0.1) rotate(120deg)' }
-      ], { duration: ANIM_DURATION });
-    });
-
-    const allPromises = allAnimations.map(anim => new Promise(resolve => anim.onfinish = resolve));
-
-    const promise = Promise.all(allPromises);
-
-    this.allAnimations.push(promise);
-
-    return promise;
   }
 }

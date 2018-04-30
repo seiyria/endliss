@@ -64,7 +64,7 @@ export class HomePage implements OnInit {
   private scores: { [key: string]: number } = {};
 
   public get currentScore(): number {
-    return this.scores[this.currentDifficulty] || 0;
+    return this.scores[this.difficultyScale] || 0;
   }
 
   constructor(
