@@ -23,18 +23,21 @@
 
     <ion-row *ngFor="let row of game.grid; let y = index" [style.transform]="transformOffset">
 
-      <ion-col *ngFor="let tile of row; let x = index"
-               (swipe)="swipeAny(tile, $event)"
-               
-               (mouseenter)="hoverOver(x, y)"
-               (click)="clickSwap(tile)">
+      <ion-col *ngFor="let tile of row; let x = index">
 
-        <div class="tile"
-             [attr.x]="x"
-             [attr.y]="y"
-             [attr.tile-id]="tile ? tile.id : ''"
-             [class.hovered]="isHovered(x, y)">
-          <img *ngIf="tile" [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
+        <div
+          (swipe)="swipeAny(tile, $event)"
+          (mouseenter)="hoverOver(x, y)"
+          (click)="clickSwap(tile)">
+
+          <div class="tile"
+               [attr.x]="x"
+               [attr.y]="y"
+               [attr.tile-id]="tile ? tile.id : ''"
+               [class.hovered]="isHovered(x, y)">
+            <img *ngIf="tile" [src]="'assets/imgs/tiles/' + tile.color + '.png'" />
+          </div>
+
         </div>
 
       </ion-col>
