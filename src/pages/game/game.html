@@ -24,11 +24,11 @@
     <ion-row *ngFor="let row of game.grid; let y = index" [style.transform]="transformOffset">
 
       <ion-col *ngFor="let tile of row; let x = index"
-               (swipe)="swipeAny(tile, $event)"
                (mouseenter)="hoverOver(x, y)"
                (click)="clickSwap(tile)">
 
         <div class="tile"
+             (swipe)="swipeAny(tile, $event)"
              [attr.x]="x"
              [attr.y]="y"
              [attr.tile-id]="tile ? tile.id : ''"
