@@ -9,8 +9,6 @@ import { Storage } from '@ionic/storage';
 })
 export class HomePage implements OnInit {
 
-  // TODO store score per difficulty and display it on the home page
-
   public get difficulties() {
     return [
       { label: 'Beginner',    scale: GameStartingDifficulty.Beginner },
@@ -64,7 +62,7 @@ export class HomePage implements OnInit {
   }
 
   private scores: { [key: string]: number } = {};
-  
+
   public get currentScore(): number {
     return this.scores[this.currentDifficulty] || 0;
   }

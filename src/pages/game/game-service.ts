@@ -16,6 +16,7 @@ export class GameService {
 
   private hasInit: boolean;
   private pauseFrames = 0;
+  private allAnimations: any[] = [];
 
   // events
   public $move = new Subject<{ offset: number }>();
@@ -67,7 +68,7 @@ export class GameService {
 
   private isPaused: boolean;
 
-  public async init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): void {
+  public async init(opts?: { speed: GameSpeed, difficulty: GameStartingDifficulty }): Promise<any> {
 
     if(opts) {
       const { speed, difficulty } = opts;
@@ -114,46 +115,60 @@ export class GameService {
 
     this.$move.next({ offset: distToGo });
 
-    const doAction = () => {
+    const doAction = async () => {
+
       if(this.isGameOver) return;
 
       if(this.isPaused) {
-        setTimeout(doAction, this.settings.speed);
+        doAfterAnimation();
         return;
       }
 
-      // pause frames
-      if(this.pauseFrames > 0) {
-        this.pauseFrames -= this.settings.speed;
-        if(this.pauseFrames <= 0) this.pauseFrames = 0;
-        setTimeout(doAction, this.settings.speed);
-        return;
-      }
+      await this.doGravity();
+      await this.settleGameAfterGravity();
 
-      // adding a row
-      if(distToGo <= 0) {
-        distToGo = MAX_DIST;
-        this.addRow();
+      setTimeout(async () => {
 
-        if(this.isGameOver) return;
+        // pause frames
+        if(this.pauseFrames > 0) {
+          this.pauseFrames -= this.settings.speed;
+          if(this.pauseFrames <= 0) this.pauseFrames = 0;
+          doAfterAnimation();
+          return;
+        }
 
+        // adding a row
+        if(distToGo <= 0) {
+          distToGo = MAX_DIST;
+          this.addRow();
+
+          if(this.isGameOver) return;
+
+          this.$move.next({ offset: distToGo });
+          doAfterAnimation();
+          return;
+        }
+
+        // not paused, not adding a row, go down
+        distToGo -= TRAVEL_SPEED;
         this.$move.next({ offset: distToGo });
-        setTimeout(doAction, this.settings.speed);
-        return;
-      }
+        doAfterAnimation();
+      });
+    };
 
-      // not paused, not adding a row, go down
-      distToGo -= TRAVEL_SPEED;
-      this.$move.next({ offset: distToGo });
+    const doAfterAnimation = async () => {
+      await this.allAnimations;
+      this.allAnimations = [];
+
       setTimeout(doAction, this.settings.speed);
-      return;
     };
 
     // start the loop
-    setTimeout(doAction, this.settings.speed);
+    doAfterAnimation();
   }
 
   public async swap(x: number, y: number, dir: -1|1) {
+    await this.allAnimations;
 
     if(this.isGameOver) return;
 
@@ -163,22 +178,20 @@ export class GameService {
     const leftTile = dir === -1 ? { x: x + dir, y } : { x, y };
     const rightTile = dir === -1 ? { x, y } : { x: x + dir, y };
 
-    const callback = async () => {
-      this.swapPositions(x, y, x + dir, y);
+    const leftTileRef = this.getTile(leftTile.x, leftTile.y);
+    const rightTileRef = this.getTile(rightTile.x, rightTile.y);
 
-      this.delayExecutionUnlessInitialized(() => {
-        this.checkForMatchesAround(x, y);
-        this.checkForMatchesAround(x + dir, y);
-      });
-
-      await this.doGravity();
-
-      this.settleGameAfterGravity();
-    };
+    if(leftTileRef && (leftTileRef.isBreaking || leftTileRef.isFalling)) return;
+    if(rightTileRef && (rightTileRef.isBreaking || rightTileRef.isFalling)) return;
 
     await this.animSwap(leftTile, rightTile);
 
-    return callback();
+    this.swapPositions(x, y, x + dir, y);
+
+    this.delayExecutionUnlessInitialized(() => {
+      this.checkForMatchesAround(x, y);
+      this.checkForMatchesAround(x + dir, y);
+    });
   }
 
   private loseGame(): void {
@@ -227,7 +240,9 @@ export class GameService {
     this._grid.push(this._nextRow);
     this._nextRow = this.generateRow();
 
-    this.settleGameAfterGravity();
+    this.delayExecutionUnlessInitialized(() => {
+      this.settleGameAfterGravity();
+    });
   }
 
   private checkPanicState() {
@@ -276,23 +291,29 @@ export class GameService {
     return Promise.all(promises);
   }
 
+  private canTileBeBroken(x: number, y: number): boolean {
+    const isOnTile = this.getTile(x, y + 1);
+    if(!isOnTile && y !== this.settings.height - 1) return false;
+
+    return true;
+  }
+
   private gainPauseFrames(brokenTiles: number): void {
     if(this.isGameOver || !this.hasInit) return;
 
-    this.pauseFrames += 150 * brokenTiles;
-    if(brokenTiles > 3) this.pauseFrames += 250;
-    if(brokenTiles > 4) this.pauseFrames += 250;
-    if(brokenTiles > 5) this.pauseFrames += 250;
+    this.pauseFrames += 100 * brokenTiles;
+    if(brokenTiles > 3) this.pauseFrames += 150;
+    if(brokenTiles > 4) this.pauseFrames += 150;
+    if(brokenTiles > 5) this.pauseFrames += 150;
 
-    this.pauseFrames = Math.min(2000, this.pauseFrames);
+    this.pauseFrames = Math.min(1000, this.pauseFrames);
   }
 
   private async checkForMatchesAround(x: number, y: number): Promise<any> {
     const tile = this.getTile(x, y);
     if(!tile) return;
 
-    const isOnTile = this.getTile(x, y + 1);
-    if(!isOnTile && y !== this.settings.height - 1) return;
+    if(!this.canTileBeBroken(x, y)) return;
 
     const verticalContinuity = [{ x, y }];
     const horizontalContinuity = [{ x, y }];
@@ -302,6 +323,7 @@ export class GameService {
       const checkTile = this.getTile(checkX, y);
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
+      if(!this.canTileBeBroken(checkX, y)) return;
 
       horizontalContinuity.unshift({ x: checkX, y });
     }
@@ -310,6 +332,7 @@ export class GameService {
       const checkTile = this.getTile(checkX, y);
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
+      if(!this.canTileBeBroken(checkX, y)) return;
 
       horizontalContinuity.push({ x: checkX, y });
     }
@@ -319,6 +342,7 @@ export class GameService {
       const checkTile = this.getTile(x, checkY);
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
+      if(!this.canTileBeBroken(x, checkY)) return;
 
       verticalContinuity.unshift({ x, y: checkY });
     }
@@ -327,6 +351,7 @@ export class GameService {
       const checkTile = this.getTile(x, checkY);
       if(!checkTile) break;
       if(checkTile.color !== tile.color) break;
+      if(!this.canTileBeBroken(x, checkY)) return;
 
       verticalContinuity.push({ x, y: checkY });
     }
@@ -352,116 +377,38 @@ export class GameService {
         this.score += brokenTiles.length;
       }
 
-      const callback = async () => {
-        this.gainPauseFrames(brokenTiles.length);
-
-        brokenTiles.forEach(({ x, y }) => {
-          this.removeTile(x, y);
-        });
-
-        await this.doGravity();
-      };
-
-      if(!this.hasInit) {
-        await callback();
-        return;
-      }
+      brokenTiles.forEach(({ x, y }) => {
+        const tile = this.getTile(x, y);
+        tile.isBreaking = true;
+      });
 
       // wait for animation to finish, then push break
       await this.animBreak(brokenTiles);
-      await callback();
+
+      this.gainPauseFrames(brokenTiles.length);
+
+      brokenTiles.forEach(({ x, y }) => {
+        this.removeTile(x, y);
+      });
     }
   }
 
-  private async doGravity(doSettle = false) {
-    console.log('do gravity');
-    // if anything falls, check the whole board for matches
-    let didAnythingFall = false;
+  private async doGravity() {
+    for(let y = this.settings.height - 1; y >= 0; y--) {
 
-    const innerGravity = () => {
-      console.log('inner gravity');
-      let swapPromises = [];
+      for(let x = 0; x < this.settings.width; x++) {
 
-      for(let y = 0; y < this.settings.height; y++) {
+        // if we have a tile here, we don't swap it down
+        const tile = this.getTile(x, y);
+        if(tile) continue;
 
-        for(let x = 0; x < this.settings.width; x++) {
+        // if there is no next tile, we don't swap air with air
+        const nextTile = this.getTile(x, y - 1);
+        if(!nextTile) continue;
 
-          // if we have a tile here, we don't swap it down
-          const tile = this.getTile(x, y);
-          if(tile) continue;
-
-          // if there is no next tile, we don't swap air with air
-          const nextTile = this.getTile(x, y - 1);
-          if(!nextTile) continue;
-
-          // game NOT initialized - swap immediately for no animation
-          if(!this.hasInit || true) {
-            this.swapPositions(x, y, x, y - 1, true);
-            swapPromises.push(true);
-
-          // game initialized - we do the swap if this tile is an air tile, and the one above is not
-          } else {
-
-            const swapPromise = new Promise(async resolve => {
-
-              const meTile = this.getTile(x, y - 1);
-
-              const callback = () => {
-                meTile.isFalling = false;
-                resolve();
-              };
-
-              meTile.isFalling = true;
-              this.swapPositions(x, y, x, y - 1, true);
-
-              if(!this.hasInit) {
-                callback();
-                return;
-              }
-
-              // await this.animFall({ x, y });
-
-              callback();
-            });
-
-            swapPromises.push(swapPromise);
-          }
-        }
+        // game NOT initialized - swap immediately for no animation
+        this.swapPositions(x, y, x, y - 1, true);
       }
-
-      return swapPromises;
-    };
-
-    if(!this.hasInit || true) {
-
-      while(innerGravity().length > 0) {
-        debugger;
-        didAnythingFall = true;
-      }
-
-    } else {
-      let innerGravityPromises = [];
-
-      do {
-
-        innerGravityPromises = innerGravity();
-        if(innerGravityPromises.length > 0) {
-          didAnythingFall = true;
-        }
-
-        await Promise.all(innerGravityPromises);
-
-      } while(innerGravityPromises.length > 0);
-    }
-
-    if(didAnythingFall && doSettle) {
-      console.log('pre-settle');
-      await this.delayExecutionUnlessInitialized(async () => {
-        console.log('inner pre settle');
-        await this.settleGameAfterGravity();
-        console.log('inner post settle');
-      });
-      console.log('post settle');
     }
   }
 
@@ -477,6 +424,8 @@ export class GameService {
   // animation related
 
   private async animSwap(leftTile: Vec2, rightTile: Vec2): Promise<any> {
+    if(!this.hasInit) return;
+
     const leftEl = <HTMLElement>document.querySelectorAll(`[x="${leftTile.x}"][y="${leftTile.y}"]`)[0];
     const rightEl = <HTMLElement>document.querySelectorAll(`[x="${rightTile.x}"][y="${rightTile.y}"]`)[0];
 
@@ -500,10 +449,16 @@ export class GameService {
     const isLeftFinished = new Promise(resolve => leftAnim.onfinish = () => resolve());
     const isRightFinished = new Promise(resolve => rightAnim.onfinish = () => resolve());
 
-    return Promise.all([isLeftFinished, isRightFinished]);
+    const promise = Promise.all([isLeftFinished, isRightFinished]);
+
+    this.allAnimations.push(promise);
+
+    return promise;
   }
 
   private async animBreak(tiles: Vec2[]): Promise<any> {
+    if(!this.hasInit) return;
+
     const styleChange = {
       transition: `all ${ANIM_DURATION}ms ease 0s`
     };
@@ -523,9 +478,14 @@ export class GameService {
 
     const allPromises = allAnimations.map(anim => new Promise(resolve => anim.onfinish = resolve));
 
-    return Promise.all(allPromises);
+    const promise = Promise.all(allPromises);
+
+    this.allAnimations.push(promise);
+
+    return promise;
   }
 
+  /*
   private async animFall(tile: Vec2): Promise<any> {
     const el = <HTMLElement>document.querySelectorAll(`[x="${tile.x}"][y="${tile.y}"]`)[0];
 
@@ -542,4 +502,5 @@ export class GameService {
 
     return new Promise(resolve => anim.onfinish = () => resolve());
   }
+  */
 }

@@ -152,7 +152,7 @@ page-game {
     left: 12.5%;
     top: 25%;
     width: 75%;
-    height: 50%;
+    height: 60%;
   }
 
   ion-backdrop {
@@ -179,5 +179,11 @@ page-game {
     color: #fff;
     text-align: center;
     background-color: darken(map-get($colors, 'primary'), 5%);
+
+    .scroll-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
   }
 }

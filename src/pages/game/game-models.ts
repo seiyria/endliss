@@ -1,10 +1,10 @@
 
 export enum GameSpeed {
-  Slowest = 400,
-  Slow = 320,
-  Normal = 240,
-  Fast = 160,
-  Fastest = 80
+  Slowest = 150,
+  Slow = 120,
+  Normal = 90,
+  Fast = 60,
+  Fastest = 30
 }
 
 export enum GameStartingDifficulty {
@@ -32,4 +32,5 @@ export class Tile {
   color: TileColor;
 
   isFalling: boolean;
+  isBreaking: boolean;
 }
