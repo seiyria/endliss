@@ -109,7 +109,7 @@ export class HomePage implements OnInit {
   }
 
   public startGame() {
-    this.navCtrl.push('GamePage', { difficulty: this.difficultyScale, speed: this.speedScale });
+    this.navCtrl.setRoot('GamePage', { difficulty: this.difficultyScale, speed: this.speedScale });
   }
 
 }
