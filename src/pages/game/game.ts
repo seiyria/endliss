@@ -5,7 +5,7 @@ import { GameService } from './game-service';
 import { Subscription } from 'rxjs/Subscription';
 
 import { HomePage } from '../home/home';
-import { GameStartingDifficulty, GameSpeed } from './game-models';
+import { GameStartingDifficulty, GameSpeed, Tile } from './game-models';
 
 @IonicPage()
 @Component({
@@ -59,28 +59,28 @@ export class GamePage {
     this.lose$.unsubscribe();
   }
 
-  swipeTile(x: number, y: number, dir: -1|1) {
-    this.game.swap(x, y, dir);
+  swipeTile(tile: Tile, dir: -1|1) {
+    this.game.swap(tile, dir);
   }
 
   private showLoseModal() {
     const modal = this.modalCtrl.create(
-      GameLoseModal, 
-      { score: this.game.currentScore }, 
+      GameLoseModal,
+      { score: this.game.currentScore },
       { cssClass: 'shrunk-modal', enableBackdropDismiss: false }
     );
 
     modal.onDidDismiss(() => {
       this.navCtrl.setRoot(HomePage);
     });
-    
+
     modal.present();
   }
 
   public pauseModal() {
     const modal = this.modalCtrl.create(
-      PauseModal, 
-      {}, 
+      PauseModal,
+      {},
       { cssClass: 'shrunk-modal' }
     );
 
@@ -92,7 +92,7 @@ export class GamePage {
       if(!val) return;
       this.navCtrl.setRoot(HomePage);
     });
-    
+
     modal.present();
   }
 

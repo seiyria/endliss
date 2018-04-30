@@ -3,7 +3,7 @@ import { GameSpeed, GameStartingDifficulty, Tile, TileColor, Vec2 } from './game
 import * as _ from 'lodash';
 import { Subject } from 'rxjs/Subject';
 
-const ANIM_DURATION = 250;
+const ANIM_DURATION = 150;
 
 class GameSettings {
   width: number;
@@ -17,6 +17,8 @@ export class GameService {
   private hasInit: boolean;
   private pauseFrames = 0;
   private allAnimations: any[] = [];
+
+  private curBlockId = 0;
 
   // events
   public $move = new Subject<{ offset: number }>();
@@ -167,10 +169,13 @@ export class GameService {
     doAfterAnimation();
   }
 
-  public async swap(x: number, y: number, dir: -1|1) {
+  public async swap(tile: Tile, dir: -1|1) {
     await this.allAnimations;
 
+    if(!tile) return;
     if(this.isGameOver) return;
+
+    const { x, y } = this.getTileXYFromId(tile.id);
 
     if(x + dir < 0) return;
     if(x + dir >= this.settings.width) return;
@@ -181,16 +186,39 @@ export class GameService {
     const leftTileRef = this.getTile(leftTile.x, leftTile.y);
     const rightTileRef = this.getTile(rightTile.x, rightTile.y);
 
+    if(!leftTileRef && !rightTileRef) return;
+
+    console.log(leftTileRef, rightTileRef);
+
     if(leftTileRef && (leftTileRef.isBreaking || leftTileRef.isFalling)) return;
     if(rightTileRef && (rightTileRef.isBreaking || rightTileRef.isFalling)) return;
 
-    await this.animSwap(leftTile, rightTile);
+    await this.animSwap(leftTileRef, rightTileRef);
 
-    this.swapPositions(x, y, x + dir, y);
+    let leftTileNow = null;
+    let rightTileNow = null;
+
+    if(leftTileRef) {
+      leftTileNow = this.getTileXYFromId(leftTileRef.id);
+    }
+
+    if(rightTileRef) {
+      rightTileNow = this.getTileXYFromId(rightTileRef.id);
+    }
+
+    if(!leftTileNow) {
+      leftTileNow = { x: rightTileNow.x - 1, y: rightTileNow.y };
+    }
+
+    if(!rightTileNow) {
+      rightTileNow = { x: leftTileNow.x + 1, y: leftTileNow.y };
+    }
+
+    this.swapPositions(leftTileNow.x, leftTileNow.y, rightTileNow.x, rightTileNow.y);
 
     this.delayExecutionUnlessInitialized(() => {
-      this.checkForMatchesAround(x, y);
-      this.checkForMatchesAround(x + dir, y);
+      this.checkForMatchesAround(leftTileNow.x, leftTileNow.y);
+      this.checkForMatchesAround(rightTileNow.x, rightTileNow.y);
     });
   }
 
@@ -199,11 +227,25 @@ export class GameService {
     this.$lose.next();
   }
 
+  private getTileXYFromId(id: number): { x: number, y: number } {
+    for(let x = 0; x < this.settings.width; x++) {
+      for(let y = 0; y < this.settings.height; y++) {
+        const tile = this.getTile(x, y);
+        if(!tile) continue;
+
+        if(tile.id === id) return { x, y };
+      }
+    }
+
+    return { x: -1, y: -1 };
+  }
+
   private generateRow(): Tile[] {
 
     const createRandomTile = () => {
       const tile = new Tile();
       tile.color = _.sample([TileColor.Blue, TileColor.Red, TileColor.Green, TileColor.Yellow]);
+      tile.id = ++this.curBlockId;
       return tile;
     };
 
@@ -425,39 +467,48 @@ export class GameService {
 
   // animation related
 
-  private async animSwap(leftTile: Vec2, rightTile: Vec2): Promise<any> {
+  private async animSwap(leftTile: Tile, rightTile: Tile): Promise<any> {
     if(!this.hasInit) return;
 
     return new Promise(resolve => {
       setTimeout(async () => {
         await this.allAnimations;
 
-        const leftEl = <HTMLElement>document.querySelectorAll(`[x="${leftTile.x}"][y="${leftTile.y}"]`)[0];
-        const rightEl = <HTMLElement>document.querySelectorAll(`[x="${rightTile.x}"][y="${rightTile.y}"]`)[0];
-
-        if(!leftEl || !rightEl) return;
+        const allPromises = [];
 
         const styleChange = {
           transition: `all ${ANIM_DURATION}ms ease 0s`
         };
 
-        _.extend(leftEl.style, styleChange);
-        _.extend(rightEl.style, styleChange);
+        if(leftTile) {
+          const leftEl = <HTMLElement>document.querySelectorAll(`[tile-id="${leftTile.id}"]`)[0];
+          _.extend(leftEl.style, styleChange);
 
-        const leftAnim = (<any>leftEl).animate([
-          { transform: 'translateX(0px)' },
-          { transform: 'translateX(44px)' }
-        ], { duration: ANIM_DURATION });
+          const leftAnim = (<any>leftEl).animate([
+            { transform: 'translateX(0px)' },
+            { transform: 'translateX(44px)' }
+          ], { duration: ANIM_DURATION });
 
-        const rightAnim = (<any>rightEl).animate([
-          { transform: 'translateX(0px)' },
-          { transform: 'translateX(-44px)' }
-        ], { duration: ANIM_DURATION });
+          const isLeftFinished = new Promise(resolve => leftAnim.onfinish = () => resolve());
 
-        const isLeftFinished = new Promise(resolve => leftAnim.onfinish = () => resolve());
-        const isRightFinished = new Promise(resolve => rightAnim.onfinish = () => resolve());
+          allPromises.push(isLeftFinished);
+        }
 
-        const promise = Promise.all([isLeftFinished, isRightFinished]);
+        if(rightTile) {
+          const rightEl = <HTMLElement>document.querySelectorAll(`[tile-id="${rightTile.id}"]`)[0];
+          _.extend(rightEl.style, styleChange);
+
+          const rightAnim = (<any>rightEl).animate([
+            { transform: 'translateX(0px)' },
+            { transform: 'translateX(-44px)' }
+          ], { duration: ANIM_DURATION });
+
+          const isRightFinished = new Promise(resolve => rightAnim.onfinish = () => resolve());
+
+          allPromises.push(isRightFinished);
+        }
+
+        const promise = Promise.all(allPromises);
 
         this.allAnimations.push(promise);
 

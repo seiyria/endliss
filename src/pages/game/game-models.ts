@@ -30,6 +30,7 @@ export class Vec2 {
 
 export class Tile {
   color: TileColor;
+  id: number;
 
   isFalling: boolean;
   isBreaking: boolean;
