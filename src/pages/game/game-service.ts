@@ -484,23 +484,4 @@ export class GameService {
 
     return promise;
   }
-
-  /*
-  private async animFall(tile: Vec2): Promise<any> {
-    const el = <HTMLElement>document.querySelectorAll(`[x="${tile.x}"][y="${tile.y}"]`)[0];
-
-    const styleChange = {
-      transition: `all ${ANIM_DURATION}ms ease 0s`
-    };
-
-    _.extend(el.style, styleChange);
-
-    const anim = (<any>el).animate([
-      { transform: 'translateY(0px)' },
-      { transform: 'translateY(44px)' }
-    ], { duration: ANIM_DURATION });
-
-    return new Promise(resolve => anim.onfinish = () => resolve());
-  }
-  */
 }
