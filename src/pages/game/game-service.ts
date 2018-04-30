@@ -171,7 +171,9 @@ export class GameService {
         this.checkForMatchesAround(x + dir, y);
       });
 
-      return this.doGravity();
+      await this.doGravity();
+
+      this.settleGameAfterGravity();
     };
 
     await this.animSwap(leftTile, rightTile);
@@ -225,8 +227,6 @@ export class GameService {
     this._grid.push(this._nextRow);
     this._nextRow = this.generateRow();
 
-    this.checkPanicState();
-
     this.settleGameAfterGravity();
   }
 
@@ -261,11 +261,19 @@ export class GameService {
   }
 
   private async settleGameAfterGravity(): Promise<any> {
+
+    const promises = [];
+
     for(let y = 0; y < this.settings.height; y++) {
       for(let x = 0; x < this.settings.width; x++) {
-        await this.checkForMatchesAround(x, y);
+        const promise = this.checkForMatchesAround(x, y);
+        await promise;
+        promises.push(promise);
       }
     }
+
+    this.checkPanicState();
+    return Promise.all(promises);
   }
 
   private gainPauseFrames(brokenTiles: number): void {
@@ -351,28 +359,30 @@ export class GameService {
           this.removeTile(x, y);
         });
 
-        return this.doGravity();
+        await this.doGravity();
       };
 
       if(!this.hasInit) {
-        return callback();
+        await callback();
+        return;
       }
 
       // wait for animation to finish, then push break
       await this.animBreak(brokenTiles);
-
-      return callback();
+      await callback();
     }
   }
 
-  private async doGravity() {
+  private async doGravity(doSettle = false) {
+    console.log('do gravity');
     // if anything falls, check the whole board for matches
     let didAnythingFall = false;
 
     const innerGravity = () => {
+      console.log('inner gravity');
       let swapPromises = [];
 
-      for(let y = this.settings.height - 1; y >= 0; y--) {
+      for(let y = 0; y < this.settings.height; y++) {
 
         for(let x = 0; x < this.settings.width; x++) {
 
@@ -425,6 +435,7 @@ export class GameService {
     if(!this.hasInit || true) {
 
       while(innerGravity().length > 0) {
+        debugger;
         didAnythingFall = true;
       }
 
@@ -443,13 +454,15 @@ export class GameService {
       } while(innerGravityPromises.length > 0);
     }
 
-    if(didAnythingFall) {
-      await this.delayExecutionUnlessInitialized(() => {
-        return this.settleGameAfterGravity();
+    if(didAnythingFall && doSettle) {
+      console.log('pre-settle');
+      await this.delayExecutionUnlessInitialized(async () => {
+        console.log('inner pre settle');
+        await this.settleGameAfterGravity();
+        console.log('inner post settle');
       });
+      console.log('post settle');
     }
-
-    this.checkPanicState();
   }
 
   // pause related
