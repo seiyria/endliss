@@ -10,6 +10,7 @@ import { HomePage } from '../pages/home/home';
 
 import { GameLoseModal, PauseModal } from '../pages/game/game';
 
+import 'web-animations-js';
 import 'hammerjs';
 
 @NgModule({
