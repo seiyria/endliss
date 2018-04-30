@@ -188,8 +188,6 @@ export class GameService {
 
     if(!leftTileRef && !rightTileRef) return;
 
-    console.log(leftTileRef, rightTileRef);
-
     if(leftTileRef && (leftTileRef.isBreaking || leftTileRef.isFalling)) return;
     if(rightTileRef && (rightTileRef.isBreaking || rightTileRef.isFalling)) return;
 
