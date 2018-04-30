@@ -332,8 +332,10 @@ export class GameService {
   }
 
   private canTileBeBroken(x: number, y: number): boolean {
-    const isOnTile = this.getTile(x, y + 1);
-    if(!isOnTile && y !== this.settings.height - 1) return false;
+    for(let i = y; i < this.settings.height; i++) {
+      const isTileBelow = this.getTile(x, i);
+      if(!isTileBelow) return false;
+    }
 
     return true;
   }
@@ -346,6 +348,7 @@ export class GameService {
       case GameStartingDifficulty.Hard:       return 0.75;
       case GameStartingDifficulty.Expert:     return 0.5;
       case GameStartingDifficulty.Impossible: return 0.1;
+      default:                                return 1;
     }
   }
 
