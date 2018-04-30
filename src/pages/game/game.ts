@@ -7,6 +7,8 @@ import { Subscription } from 'rxjs/Subscription';
 import { HomePage } from '../home/home';
 import { GameStartingDifficulty, GameSpeed, Tile } from './game-models';
 
+import * as _ from 'lodash';
+
 @IonicPage()
 @Component({
   selector: 'page-game',
@@ -19,6 +21,9 @@ export class GamePage {
   private lose$: Subscription;
 
   public offset = 0;
+
+  public curHoverX: number;
+  public curHoverY: number;
 
   public get transformOffset(): string {
     return `translateY(${this.offset}px)`;
@@ -50,6 +55,9 @@ export class GamePage {
       scores[difficulty] = Math.max(scores[difficulty], this.game.currentScore);
       await this.storage.set('scores', scores);
 
+      this.curHoverX = null;
+      this.curHoverY = null;
+
       this.showLoseModal();
     });
   }
@@ -59,13 +67,33 @@ export class GamePage {
     this.lose$.unsubscribe();
   }
 
-  swipeAny(tile: Tile, $event) {
-    const dir = $event.deltaX < 0 ? -1 : 1;
-    this.swipeTile(tile, dir);
+  hoverOver(x: number, y: number) {
+    if(x < 0 || x >= 5 || this.game.gameOver) return;
+
+    this.curHoverX = x;
+    this.curHoverY = y;
   }
 
-  swipeTile(tile: Tile, dir: -1|1) {
+  clickSwap(tile: Tile) {
+    if(_.isUndefined(this.curHoverX) || _.isUndefined(this.curHoverY)) return;
+    this.game.swapBasedOnCoordinate(this.curHoverX, this.curHoverY);
+  }
+
+  swipeAny(tile: Tile, $event) {
+    const dir = $event.deltaX < 0 ? -1 : 1;
+    this.swapTile(tile, dir);
+  }
+
+  swapTile(tile: Tile, dir: -1|1) {
+    if(this.game.gameOver) return;
     this.game.swap(tile, dir);
+  }
+
+  public isHovered(x: number, y: number): boolean {
+    if(x === this.curHoverX && y === this.curHoverY) return true;
+    if(x === this.curHoverX + 1 && y === this.curHoverY) return true;
+
+    return false;
   }
 
   private showLoseModal() {

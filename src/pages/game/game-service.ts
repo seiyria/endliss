@@ -169,7 +169,15 @@ export class GameService {
     doAfterAnimation();
   }
 
-  public async swap(tile: Tile, dir: -1|1) {
+  public async swapBasedOnCoordinate(x: number, y: number): Promise<any> {
+    const tile = this.getTile(x, y);
+    if(tile) return this.swap(tile, 1);
+
+    const rightTile = this.getTile(x + 1, y);
+    if(rightTile) return this.swap(rightTile, -1);
+  }
+
+  public async swap(tile: Tile, dir: -1|1): Promise<any> {
     await this.allAnimations;
 
     if(!tile) return;
