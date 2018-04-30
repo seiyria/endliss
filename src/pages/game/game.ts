@@ -74,7 +74,7 @@ export class GamePage {
     this.curHoverY = y;
   }
 
-  clickSwap(tile: Tile) {
+  clickSwap() {
     if(_.isUndefined(this.curHoverX) || _.isUndefined(this.curHoverY)) return;
     this.game.swapBasedOnCoordinate(this.curHoverX, this.curHoverY);
   }

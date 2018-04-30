@@ -119,27 +119,31 @@ page-game {
     }
   }
 
-  .tile {
-    user-select: none;
-    pointer-events: none;
-    object-fit: contain;
-    min-width: $tile-height !important;
-    max-width: $tile-height !important;
-    min-height: $tile-height !important;
-    max-height: $tile-height !important;
+  .tile-container {
+    touch-action: pan-x;
 
-    &.hovered {
-      outline: 1px dashed #000;
-    }
+    .tile {
+      user-select: none;
+      pointer-events: none;
+      object-fit: contain;
+      min-width: $tile-height !important;
+      max-width: $tile-height !important;
+      min-height: $tile-height !important;
+      max-height: $tile-height !important;
 
-    &.transparent {
-      opacity: 0.5;
-    }
+      &.hovered {
+        outline: 1px dashed #000;
+      }
 
-    img {
-      display: block;
-      width: auto;
-      height: auto;
+      &.transparent {
+        opacity: 0.5;
+      }
+
+      img {
+        display: block;
+        width: auto;
+        height: auto;
+      }
     }
   }
 }

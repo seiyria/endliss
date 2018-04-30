@@ -25,9 +25,10 @@
 
       <ion-col *ngFor="let tile of row; let x = index">
 
-        <div (swipe)="swipeAny(tile, $event)"
+        <div class="tile-container"
+             (swipe)="swipeAny(tile, $event)"
              (mouseenter)="hoverOver(x, y)"
-             (click)="clickSwap(tile)">
+             (click)="clickSwap()">
 
           <div class="tile"
                [attr.x]="x"
